@@ -9,6 +9,7 @@ struct ImageView: View {
 
   init(data: RawImageData) {
     self.data = data
+     
   }
 
   var body: some View {
@@ -18,6 +19,7 @@ struct ImageView: View {
         content: .init(block: self.content)
       )
     )
+    
   }
 
   private var label: some View {

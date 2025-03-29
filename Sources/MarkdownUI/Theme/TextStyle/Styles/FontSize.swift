@@ -1,13 +1,13 @@
 import Foundation
 
 /// A text style that sets the font size.
-public struct FontSize: TextStyle {
-  private enum Size {
+public struct FontSize: TextStyle  {
+    private enum Size : Sendable{
     case points(CGFloat)
     case relative(RelativeSize)
   }
 
-  private let size: Size
+ private let size: Size
 
   /// Creates a font size text style that sets the size to a relative value.
   /// - Parameter relativeSize: The relative size of the font.

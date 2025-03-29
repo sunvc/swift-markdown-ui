@@ -1,6 +1,6 @@
 import Foundation
-@_implementationOnly import cmark_gfm
-@_implementationOnly import cmark_gfm_extensions
+import cmark_gfm
+import cmark_gfm_extensions
 
 extension Array where Element == BlockNode {
   init(markdown: String) {
@@ -20,7 +20,9 @@ extension Array where Element == BlockNode {
     UnsafeNode.makeDocument(self) { document in
       String(cString: cmark_render_plaintext(document, CMARK_OPT_DEFAULT, 0))
     } ?? ""
+      
   }
+    
 
   func renderHTML() -> String {
     UnsafeNode.makeDocument(self) { document in

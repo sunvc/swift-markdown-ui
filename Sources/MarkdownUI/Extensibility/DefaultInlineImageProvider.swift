@@ -1,4 +1,4 @@
-import NetworkImage
+
 import SwiftUI
 
 /// The default inline image provider, which loads images from the network.
