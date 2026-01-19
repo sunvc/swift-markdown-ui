@@ -8,6 +8,15 @@
         "revision" : "5d9bdaa4228b381639fff09403e39a04926e2dbe",
         "version" : "0.7.1"
       }
+    },
+    {
+      "identity" : "swiftui-math",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sunvc/swiftui-math",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5c1bad6e6aafb90939e1c9a68f7c676cde1c5d10"
+      }
     }
   ],
   "version" : 2

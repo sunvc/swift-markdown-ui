@@ -60,6 +60,8 @@ private struct TextInlineRenderer {
       self.renderHTML(content)
     case .image(let source, _):
       self.renderImage(source)
+    case .math(let content):
+      self.renderMath(content)
     default:
       self.defaultRender(inline)
     }
@@ -103,6 +105,21 @@ private struct TextInlineRenderer {
   private mutating func renderImage(_ source: String) {
     if let image = self.images[source] {
       self.result = self.result + Text(image)
+    }
+  }
+
+  private mutating func renderMath(_ math: String) {
+    let fontSize = self.attributes.fontProperties?.size ?? FontProperties.defaultSize
+    let color = self.attributes.foregroundColor
+    
+    let image = MainActor.assumeIsolated {
+      MathImageGenerator.image(for: math, fontSize: fontSize, color: color)
+    }
+    
+    if let image {
+      self.result = self.result + Text(image)
+    } else {
+      self.result = self.result + Text(math)
     }
   }
 

@@ -1,15 +1,15 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.9
 
 import PackageDescription
 
 let package = Package(
   name: "swift-markdown-ui",
   platforms: [
-    .macOS(.v12),
-    .iOS(.v15),
-    .tvOS(.v15),
-    .macCatalyst(.v15),
-    .watchOS(.v8),
+    .macOS(.v13),
+    .iOS(.v16),
+    .tvOS(.v16),
+    .macCatalyst(.v16),
+    .watchOS(.v9),
   ],
   products: [
     .library(
@@ -23,6 +23,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/swiftlang/swift-cmark", from: "0.7.1"),
+    .package(url: "https://github.com/sunvc/swiftui-math", branch: "main"),
   ],
   targets: [
     .target(
@@ -30,6 +31,7 @@ let package = Package(
       dependencies: [
         .product(name: "cmark-gfm", package: "swift-cmark"),
         .product(name: "cmark-gfm-extensions", package: "swift-cmark"),
+        .product(name: "SwiftUIMath", package: "swiftui-math"),
       ]
     ),
     .target(name: "Splash",dependencies: []),
