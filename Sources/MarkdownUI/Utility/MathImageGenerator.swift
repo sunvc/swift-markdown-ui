@@ -9,11 +9,12 @@ import UIKit
 
 @MainActor
 enum MathImageGenerator {
-  static func image(for latex: String, fontSize: CGFloat, color: Color?) -> Image? {
+  static func image(for latex: String, fontSize: CGFloat, color: Color?, colorScheme: ColorScheme) -> Image? {
     let mathView = Math(latex)
       .mathFont(.init(name: .latinModern, size: fontSize))
       .foregroundStyle(color ?? .primary)
       .mathTypesettingStyle(.text) // Inline math style
+      .environment(\.colorScheme, colorScheme)
     
     let renderer = ImageRenderer(content: mathView)
     
