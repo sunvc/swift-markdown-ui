@@ -23,7 +23,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/swiftlang/swift-cmark", from: "0.7.1"),
-    .package(url: "https://github.com/sunvc/swiftui-math", branch: "main"),
+    .package(url: "https://github.com/sunvc/swiftui-math", from: "0.0.1"),
   ],
   targets: [
     .target(

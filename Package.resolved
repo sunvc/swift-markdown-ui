@@ -1,4 +1,5 @@
 {
+  "originHash" : "0cdfd7c1e1570ccb4e6dbf62c39f30e0338318da61bd31cab2de3de502caa02c",
   "pins" : [
     {
       "identity" : "swift-cmark",
@@ -14,10 +15,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sunvc/swiftui-math",
       "state" : {
-        "branch" : "main",
-        "revision" : "5c1bad6e6aafb90939e1c9a68f7c676cde1c5d10"
+        "revision" : "5c1bad6e6aafb90939e1c9a68f7c676cde1c5d10",
+        "version" : "0.0.1"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
