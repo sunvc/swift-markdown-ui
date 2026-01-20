@@ -172,22 +172,24 @@ struct MultiBlockView: View {
           }
           
           // Indentation logic
-          let baseIndent: CGFloat = CGFloat(indentLevel) * indentUnit
-          let itemIndent: CGFloat = indentUnit
-          
-          let pStyle = NSMutableParagraphStyle()
-          pStyle.firstLineHeadIndent = baseIndent
-          pStyle.headIndent = baseIndent + itemIndent
-          pStyle.paragraphSpacing = 0 
-          
-          // Use itemSpacing for the marker line itself IF it has no children (unlikely) 
-          // or if the first child is merged into it.
-          // Actually, we merge the first child paragraph.
-          // The paragraphSpacing of the merged paragraph will be set by appendContent.
-          
-          pStyle.tabStops = [NSTextTab(textAlignment: .left, location: baseIndent + itemIndent, options: [:])]
-          
-          let markerAttrStr = NSMutableAttributedString(string: marker)
+        let baseIndent: CGFloat = CGFloat(indentLevel) * indentUnit
+        let itemIndent: CGFloat = indentUnit
+        
+        let pStyle = NSMutableParagraphStyle()
+        pStyle.firstLineHeadIndent = baseIndent
+        pStyle.headIndent = baseIndent + itemIndent
+        
+        // Determine spacing for the first block (merged with marker)
+        // If the marker paragraph is the first character, its style dictates the paragraph spacing.
+        // If the item has only 1 child, use itemSpacing.
+        // If it has multiple, use internal paragraph spacing (usually paragraph bottom margin).
+        let pBottom = self.styles[.paragraph]?.margins.bottom ?? defaultParagraphBottom
+        let firstBlockSpacing = (children.count == 1) ? itemSpacing : pBottom
+        pStyle.paragraphSpacing = firstBlockSpacing
+        
+        pStyle.tabStops = [NSTextTab(textAlignment: .left, location: baseIndent + itemIndent, options: [:])]
+        
+        let markerAttrStr = NSMutableAttributedString(string: marker)
           markerAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: markerAttrStr.length))
           // Use standard label color for marker to avoid it disappearing if list item text has peculiar color, 
           // OR match list item text color? Usually matching text is better.
@@ -208,11 +210,11 @@ struct MultiBlockView: View {
           result.append(markerAttrStr)
           
           for (childIndex, child) in children.enumerated() {
-              if childIndex == 0 {
-                  if case .paragraph(let c) = child {
-                       // CRITICAL FIX: Use listItemAttributes for content
-                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? itemSpacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: listItemAttributes?.textAttributes, indentUnit: indentUnit)
-                  } else {
+                if childIndex == 0 {
+                    if case .paragraph(let c) = child {
+                         // CRITICAL FIX: Use listItemAttributes for content
+                         self.appendContent(c, to: result, spacing: firstBlockSpacing, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: listItemAttributes?.textAttributes, indentUnit: indentUnit)
+                    } else {
                       let newline = NSMutableAttributedString(string: "\n")
                       newline.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: 1))
                       result.append(newline)
