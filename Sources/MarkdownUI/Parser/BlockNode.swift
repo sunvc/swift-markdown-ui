@@ -11,6 +11,7 @@ enum BlockNode: Hashable {
   case heading(level: Int, content: [InlineNode])
   case table(columnAlignments: [RawTableColumnAlignment], rows: [RawTableRow])
   case thematicBreak
+  case multiBlock(children: [BlockNode])
 }
 
 extension BlockNode {
@@ -24,6 +25,8 @@ extension BlockNode {
       return items.map(\.children).flatMap { $0 }
     case .taskList(_, let items):
       return items.map(\.children).flatMap { $0 }
+    case .multiBlock(let children):
+      return children
     default:
       return []
     }
@@ -32,6 +35,36 @@ extension BlockNode {
   var isParagraph: Bool {
     guard case .paragraph = self else { return false }
     return true
+  }
+
+  enum BlockType: Hashable {
+      case paragraph
+      case heading(Int)
+      case blockquote
+      case codeBlock
+      case image
+      case list
+      case listItem
+      case table
+      case tableCell
+      case thematicBreak
+  }
+
+  var blockType: BlockType? {
+      switch self {
+      case .paragraph: return .paragraph
+      case .heading(let level, _): return .heading(level)
+      case .blockquote: return .blockquote
+      case .codeBlock: return .codeBlock
+      case .htmlBlock: return .paragraph // Treated as paragraph often
+      case .table: return .table
+      case .thematicBreak: return .thematicBreak
+      // Lists are containers, they use .list style but we might need more granularity
+      case .bulletedList: return .list
+      case .numberedList: return .list
+      case .taskList: return .list
+      default: return nil
+      }
   }
 }
 

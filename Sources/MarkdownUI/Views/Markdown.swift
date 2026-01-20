@@ -191,6 +191,7 @@ import SwiftUI
 public struct Markdown: View {
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.theme.text) private var text
+  @State private var blockStyles: [BlockNode.BlockType: BlockStyleAttributes] = [:]
 
   private let content: MarkdownContent
   private let baseURL: URL?
@@ -211,10 +212,16 @@ public struct Markdown: View {
 
   public var body: some View {
     TextStyleAttributesReader { attributes in
-      BlockSequence(self.blocks)
+      BlockSequence(self.blocks.coalesced())
         .foregroundColor(attributes.foregroundColor)
         .background(attributes.backgroundColor)
         .modifier(ScaledFontSizeModifier(attributes.fontProperties?.size))
+        .environment(\.blockStyles, self.blockStyles)
+        .background(
+          StyleProbe(types: [.paragraph, .heading(1), .heading(2), .heading(3), .heading(4), .heading(5), .heading(6)]) { styles in
+            self.blockStyles = styles
+          }
+        )
     }
     .textStyle(self.text)
     .environment(\.baseURL, self.baseURL)
