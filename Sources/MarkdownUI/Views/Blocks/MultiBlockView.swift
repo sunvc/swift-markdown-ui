@@ -97,12 +97,20 @@ struct MultiBlockView: View {
       // Use listItem attributes for content to ensure specific list styling is respected
       let listItemType = BlockNode.BlockType.listItem
       let listItemAttributes = self.styles[listItemType]
-      let listItemTopMargin = listItemAttributes?.margins.top ?? 0
+      
+      // Basic Theme defaults: 
+      // listItem top margin = 0.25em (~4.25pt at 17pt)
+      // paragraph bottom margin = 1em (~17pt)
+      let defaultFontSize = FontProperties.defaultSize
+      let defaultListItemTop = defaultFontSize * 0.25
+      let defaultParagraphBottom = defaultFontSize * 1.0
+      
+      let listItemTopMargin = listItemAttributes?.margins.top ?? defaultListItemTop
       
       // Calculate Indentation based on Font Size
       // Use the font size from the list item itself, or fallback to paragraph/default
       let contentFontProperties = listItemAttributes?.textAttributes.fontProperties ?? self.styles[.paragraph]?.textAttributes.fontProperties
-      let fontSize = contentFontProperties?.size ?? FontProperties.defaultSize
+      let fontSize = contentFontProperties?.size ?? defaultFontSize
       let indentUnit = fontSize * 2.0 
       
       for (index, item) in items.enumerated() {
@@ -128,10 +136,7 @@ struct MultiBlockView: View {
                    itemSpacing = listItemTopMargin
               } else {
                    // For loose lists, we want to ensure paragraph spacing is respected.
-                   // If children are paragraphs, they have their own bottom margin.
-                   // But `appendBlock` logic uses `spacing` arg for the last element.
-                   // So we pass `max(pBottom, listItemTop)` to ensure separation.
-                   let pBottom = self.styles[.paragraph]?.margins.bottom ?? 0
+                   let pBottom = self.styles[.paragraph]?.margins.bottom ?? defaultParagraphBottom
                    itemSpacing = max(pBottom, listItemTopMargin)
               }
           }
@@ -158,6 +163,11 @@ struct MultiBlockView: View {
           pStyle.firstLineHeadIndent = baseIndent
           pStyle.headIndent = baseIndent + itemIndent
           pStyle.paragraphSpacing = 0 
+          
+          // Use itemSpacing for the marker line itself IF it has no children (unlikely) 
+          // or if the first child is merged into it.
+          // Actually, we merge the first child paragraph.
+          // The paragraphSpacing of the merged paragraph will be set by appendContent.
           
           pStyle.tabStops = [NSTextTab(textAlignment: .left, location: baseIndent + itemIndent, options: [:])]
           
