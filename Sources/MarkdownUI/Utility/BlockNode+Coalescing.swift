@@ -3,8 +3,14 @@ import Foundation
 extension BlockNode {
   var isMergeable: Bool {
     switch self {
-    case .paragraph, .heading:
+    case .paragraph, .heading, .blockquote:
       return true
+    case .bulletedList(_, let items):
+        return items.allSatisfy { $0.children.allSatisfy(\.isMergeable) }
+    case .numberedList(_, _, let items):
+        return items.allSatisfy { $0.children.allSatisfy(\.isMergeable) }
+    case .taskList(_, let items):
+        return items.allSatisfy { $0.children.allSatisfy(\.isMergeable) }
     default:
       return false
     }

@@ -15,7 +15,6 @@ struct MultiBlockView: View {
       TextView(attributedText: self.attributedText)
         .fixedSize(horizontal: false, vertical: true)
     #elseif os(macOS)
-      // On macOS, we can use Text with AttributedString
       Text(AttributedString(self.attributedText))
         .fixedSize(horizontal: false, vertical: true)
     #else
@@ -25,20 +24,151 @@ struct MultiBlockView: View {
 
   private var attributedText: NSAttributedString {
     let result = NSMutableAttributedString()
+    self.appendBlocks(blocks, to: result, indentLevel: 0)
+    return result
+  }
 
+  private func appendBlocks(_ blocks: [BlockNode], to result: NSMutableAttributedString, indentLevel: Int) {
     for (index, block) in blocks.enumerated() {
-      guard let type = block.blockType,
-            let attributes = styles[type]
-      else { continue }
+        self.appendBlock(block, to: result, indentLevel: indentLevel, isLast: index == blocks.count - 1, nextBlock: index < blocks.count - 1 ? blocks[index+1] : nil)
+    }
+  }
 
-      // 1. Render content to NSAttributedString
-      let content: [InlineNode]
-      switch block {
-      case .paragraph(let c): content = c
-      case .heading(_, let c): content = c
-      default: content = []
+  private func appendBlock(_ block: BlockNode, to result: NSMutableAttributedString, indentLevel: Int, isLast: Bool, nextBlock: BlockNode?) {
+    // Determine styles
+    let type = block.blockType ?? .paragraph // fallback
+    let attributes = styles[type] ?? styles[.paragraph] // fallback
+
+    // Spacing Calculation
+    let thisBottom = attributes?.margins.bottom ?? 0
+    var spacing: CGFloat = thisBottom
+
+    if let nextBlock = nextBlock,
+       let nextType = nextBlock.blockType,
+       let nextAttributes = styles[nextType] {
+       let nextTop = nextAttributes.margins.top ?? 0
+       spacing = max(thisBottom, nextTop)
+    }
+
+    switch block {
+    case .paragraph(let content), .heading(_, let content):
+        self.appendContent(content, to: result, spacing: spacing, indentLevel: indentLevel, attributes: attributes?.textAttributes)
+        
+    case .blockquote(let children):
+        // Indent level increases
+        self.appendBlocks(children, to: result, indentLevel: indentLevel + 1)
+        
+    case .bulletedList(_, let items):
+        self.appendListItems(items, style: .bullet, to: result, indentLevel: indentLevel, spacing: spacing)
+        
+    case .numberedList(_, let start, let items):
+        self.appendListItems(items, style: .number(start: start), to: result, indentLevel: indentLevel, spacing: spacing)
+        
+    case .taskList(_, let items):
+        self.appendListItems(items, style: .task, to: result, indentLevel: indentLevel, spacing: spacing)
+
+    default:
+        break // Should not happen if coalescing logic is correct
+    }
+    
+    // Add newline if not last in this sequence
+    if !isLast {
+       result.append(NSAttributedString(string: "\n"))
+    }
+  }
+
+  enum ListStyle {
+      case bullet
+      case number(start: Int)
+      case task
+  }
+  
+  private func appendListItems<T>(_ items: [T], style: ListStyle, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat) {
+      for (index, item) in items.enumerated() {
+          let children: [BlockNode]
+          let isCompleted: Bool
+          
+          if let item = item as? RawListItem {
+              children = item.children
+              isCompleted = false
+          } else if let item = item as? RawTaskListItem {
+              children = item.children
+              isCompleted = item.isCompleted
+          } else {
+              continue
+          }
+          
+          // Marker
+          let marker: String
+          switch style {
+          case .bullet: marker = "•\t"
+          case .number(let start): marker = "\(start + index).\t"
+          case .task: marker = isCompleted ? "[x]\t" : "[ ]\t"
+          }
+          
+          // Indentation for list item
+          // Standard indentation: 20pt * level?
+          // We need hanging indent.
+          let baseIndent: CGFloat = CGFloat(indentLevel) * 20.0
+          let itemIndent: CGFloat = 20.0
+          
+          let pStyle = NSMutableParagraphStyle()
+          pStyle.firstLineHeadIndent = baseIndent
+          pStyle.headIndent = baseIndent + itemIndent
+          pStyle.paragraphSpacing = 0 // Tight list? 
+          // If the list is NOT tight, we might want spacing. 
+          // For now assume tight inside list items, but spacing after list?
+          // Actually MarkdownUI passes `isTight` param. 
+          
+          // We'll apply the spacing to the last block of the item.
+          
+          // Construct the marker string
+          // We apply standard font to marker?
+          let markerAttrStr = NSMutableAttributedString(string: marker)
+          markerAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: markerAttrStr.length))
+          // Add standard color/font
+           markerAttrStr.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.label, range: NSRange(location: 0, length: markerAttrStr.length))
+          
+          result.append(markerAttrStr)
+          
+          // Render Children
+          // The first child is usually on the same line as marker.
+          // If first child is paragraph, we inline it.
+          // If multiple blocks, subsequent blocks need full indentation (headIndent).
+          
+          for (childIndex, child) in children.enumerated() {
+              if childIndex == 0 {
+                  // Merge with marker line
+                  // But `appendBlock` adds content.
+                  // We need to strip the newline from marker? No marker didn't have newline.
+                  // We need `appendBlock` to use the SAME paragraph style but maybe modifying indent?
+                  // Actually, `appendContent` creates its own paragraph style.
+                  // We should pass the pStyle to `appendContent`.
+                  
+                  if case .paragraph(let c) = child {
+                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? spacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: nil)
+                  } else {
+                      // If it's not a paragraph (e.g. nested list immediately?), new line?
+                      // Usually list item starts with paragraph.
+                      result.append(NSAttributedString(string: "\n"))
+                      self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil)
+                  }
+              } else {
+                  // Subsequent blocks
+                  result.append(NSAttributedString(string: "\n"))
+                  // They should be indented to align with text (base + itemIndent)
+                   self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil)
+              }
+          }
+          
+          if index < items.count - 1 {
+              result.append(NSAttributedString(string: "\n"))
+          }
       }
+  }
 
+  private func appendContent(_ content: [InlineNode], to result: NSMutableAttributedString, spacing: CGFloat, indentLevel: Int, overrideParagraphStyle: NSMutableParagraphStyle? = nil, attributes: AttributeContainer?) {
+      
       let textStyles = InlineTextStyles(
         code: self.theme.code,
         emphasis: self.theme.emphasis,
@@ -46,71 +176,52 @@ struct MultiBlockView: View {
         strikethrough: self.theme.strikethrough,
         link: self.theme.link
       )
-
+      
       let attrStr = content.renderAttributedString(
         baseURL: self.baseURL,
         textStyles: textStyles,
         softBreakMode: self.softBreakMode,
-        attributes: attributes.textAttributes,
+        attributes: attributes ?? AttributeContainer(), // Use passed attributes or empty
         colorScheme: self.colorScheme
       )
-
-        let nsAttrStr = NSMutableAttributedString(attributedString: attrStr.resolvingUIFonts())
-
-      // 2. Calculate Spacing
-      // We need to look ahead or look behind.
-      // Strategy: Apply spacing to the END of this paragraph.
-      // Spacing = max(this.bottom, next.top).
       
-      let thisBottom = attributes.margins.bottom ?? 0
-      var spacing: CGFloat = thisBottom
-
-      if index < blocks.count - 1 {
-        let nextBlock = blocks[index + 1]
-        if let nextType = nextBlock.blockType,
-           let nextAttributes = styles[nextType] {
-          let nextTop = nextAttributes.margins.top ?? 0
-          // MarkdownUI logic: max(top, prev_bottom)
-          spacing = max(thisBottom, nextTop)
-        }
-      }
-
-      // 3. Apply Paragraph Style
-      // We need to get existing paragraph style or create one
+      let nsAttrStr = NSMutableAttributedString(attributedString: attrStr.resolvingUIFonts())
+      
       let fullRange = NSRange(location: 0, length: nsAttrStr.length)
       
-      // Enumerate attributes to preserve existing styles (like code blocks inside text?)
-      // But we want to apply block-level paragraph style.
-      
-      // Create a mutable paragraph style
-      let pStyle = NSMutableParagraphStyle()
+      // Paragraph Style
+      let pStyle: NSMutableParagraphStyle
+      if let override = overrideParagraphStyle {
+          pStyle = override
+      } else {
+          pStyle = NSMutableParagraphStyle()
+          let indent = CGFloat(indentLevel) * 20.0
+          pStyle.firstLineHeadIndent = indent
+          pStyle.headIndent = indent
+      }
       pStyle.paragraphSpacing = spacing
       
-      // If the theme provided a font, we might need to adjust line height?
-      // MarkdownUI uses relativeLineSpacing.
-      // This is usually handled in renderAttributedString if attributes has it.
-      
-      // We merge pStyle with existing pStyle if any
+      // Apply pStyle
       nsAttrStr.enumerateAttribute(NSAttributedString.Key.paragraphStyle, in: fullRange, options: []) { (value, range, _) in
           let existing = (value as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? pStyle.mutableCopy() as! NSMutableParagraphStyle
-          existing.paragraphSpacing = spacing
-          nsAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: existing, range: range)
+          // Merge properties
+          existing.firstLineHeadIndent = pStyle.firstLineHeadIndent
+          existing.headIndent = pStyle.headIndent
+          existing.paragraphSpacing = pStyle.paragraphSpacing
+          // Keep existing tab stops?
+          if !pStyle.tabStops.isEmpty {
+               existing.tabStops = pStyle.tabStops
+          }
+           nsAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: existing, range: range)
       }
       
-      // If no paragraph style was present, add it
       if nsAttrStr.length > 0 {
-          nsAttrStr.addAttributes([NSAttributedString.Key.paragraphStyle: pStyle], range: fullRange)
+           // Ensure base pStyle is applied if missing
+           // But enumeration covers it.
+           // Just in case whole string has no pStyle:
+           nsAttrStr.addAttributes([NSAttributedString.Key.paragraphStyle: pStyle], range: fullRange)
       }
       
-      // 4. Append
       result.append(nsAttrStr)
-      
-      // 5. Append Newline if not last
-      if index < blocks.count - 1 {
-          result.append(NSAttributedString(string: "\n"))
-      }
-    }
-    
-    return result
   }
 }
