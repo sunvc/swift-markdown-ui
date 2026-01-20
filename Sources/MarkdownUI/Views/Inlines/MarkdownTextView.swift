@@ -21,7 +21,7 @@ struct TextView: UIViewRepresentable {
     }
 
     // --- 构造函数 2: 支持直接传入 NSAttributedString ---
-    init(_ attributedText: NSAttributedString) {
+    init(attributedText: NSAttributedString) {
         self.attributedText = attributedText
         highlightText = nil
     }

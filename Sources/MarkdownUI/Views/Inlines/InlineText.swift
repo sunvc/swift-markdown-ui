@@ -20,7 +20,7 @@ struct InlineText: View {
     TextStyleAttributesReader { attributes in
 #if os(iOS)
       TextView(
-        self.inlines.renderAttributedString(
+        attributedText: self.inlines.renderAttributedString(
           baseURL: self.baseURL,
           textStyles: .init(
             code: self.theme.code,

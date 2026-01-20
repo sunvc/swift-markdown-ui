@@ -12,7 +12,7 @@ struct MultiBlockView: View {
 
   var body: some View {
     #if os(iOS)
-      TextView(self.attributedText)
+      TextView(attributedText: self.attributedText)
         .fixedSize(horizontal: false, vertical: true)
     #elseif os(macOS)
       // On macOS, we can use Text with AttributedString
@@ -55,7 +55,7 @@ struct MultiBlockView: View {
         colorScheme: self.colorScheme
       )
 
-      let nsAttrStr = NSMutableAttributedString(attrStr.resolvingUIFonts())
+        let nsAttrStr = NSMutableAttributedString(attributedString: attrStr.resolvingUIFonts())
 
       // 2. Calculate Spacing
       // We need to look ahead or look behind.
@@ -91,22 +91,15 @@ struct MultiBlockView: View {
       // This is usually handled in renderAttributedString if attributes has it.
       
       // We merge pStyle with existing pStyle if any
-      nsAttrStr.enumerateAttribute(.paragraphStyle, in: fullRange, options: []) { (value, range, _) in
+      nsAttrStr.enumerateAttribute(NSAttributedString.Key.paragraphStyle, in: fullRange, options: []) { (value, range, _) in
           let existing = (value as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? pStyle.mutableCopy() as! NSMutableParagraphStyle
           existing.paragraphSpacing = spacing
-          nsAttrStr.addAttribute(.paragraphStyle, value: existing, range: range)
+          nsAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: existing, range: range)
       }
       
       // If no paragraph style was present, add it
       if nsAttrStr.length > 0 {
-          // Check first char? Just add to whole string if missing?
-          // The enumeration above handles ranges where it exists.
-          // We should add it to the whole string, merging.
-          // But enumeration is better.
-          // Wait, if there is NO paragraph style, the loop runs once with nil value? 
-          // No, enumerateAttribute runs for runs.
-          // Better:
-          nsAttrStr.addAttributes([.paragraphStyle: pStyle], range: fullRange)
+          nsAttrStr.addAttributes([NSAttributedString.Key.paragraphStyle: pStyle], range: fullRange)
       }
       
       // 4. Append
