@@ -97,8 +97,6 @@ private struct AttributedStringInlineRenderer {
       self.renderLink(destination: destination, children: children)
     case .image(let source, let children):
       self.renderImage(source: source, children: children)
-    case .math(let content):
-      self.renderMath(content)
     }
   }
 
@@ -191,34 +189,6 @@ private struct AttributedStringInlineRenderer {
 
   private mutating func renderImage(source: String, children: [InlineNode]) {
     // AttributedString does not support images
-  }
-
-  private mutating func renderMath(_ math: String) {
-    let fontSize = self.attributes.fontProperties?.size ?? FontProperties.defaultSize
-    let weight = self.attributes.fontProperties?.weight ?? FontProperties.defaultWeight
-    let color = self.attributes.foregroundColor
-
-    let platformImage = MainActor.assumeIsolated {
-      MathImageGenerator.platformImage(
-        for: math,
-        fontSize: fontSize,
-        weight: weight,
-        color: color,
-        colorScheme: self.colorScheme
-      )
-    }
-
-    if let platformImage {
-      let attachment = NSTextAttachment()
-      #if os(macOS)
-      attachment.image = platformImage
-      #else
-      attachment.image = platformImage
-      #endif
-      self.result += AttributedString(NSAttributedString(attachment: attachment))
-    } else {
-      self.renderCode("$\(math)$")
-    }
   }
 }
 

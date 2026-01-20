@@ -25,6 +25,8 @@ extension BlockNode: View {
       }
     case .thematicBreak:
       ThematicBreakView()
+    case .multiBlock(let children):
+      MultiBlockView(blocks: children)
     }
   }
 }
