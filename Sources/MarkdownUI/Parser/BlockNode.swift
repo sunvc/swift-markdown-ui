@@ -44,6 +44,9 @@ extension BlockNode {
       case codeBlock
       case image
       case list
+      case bulletedList
+      case numberedList
+      case taskList
       case listItem
       case table
       case tableCell
@@ -59,10 +62,9 @@ extension BlockNode {
       case .htmlBlock: return .paragraph // Treated as paragraph often
       case .table: return .table
       case .thematicBreak: return .thematicBreak
-      // Lists are containers, they use .list style but we might need more granularity
-      case .bulletedList: return .list
-      case .numberedList: return .list
-      case .taskList: return .list
+      case .bulletedList: return .bulletedList
+      case .numberedList: return .numberedList
+      case .taskList: return .taskList
       default: return nil
       }
   }

@@ -50,6 +50,14 @@ struct MultiBlockView: View {
        spacing = max(thisBottom, nextTop)
     }
 
+    // Adjust font size if theme attributes are missing (e.g. List usually doesn't set font, Paragraph does)
+    // If attributes is nil or empty text attributes, try to use Paragraph attributes as base for text content?
+    // Actually, usually we want to inherit.
+    
+    // For lists, we often don't get text attributes from the List style itself.
+    // We should fallback to paragraph attributes for the content of the list if needed.
+    // But `appendContent` will use passed `attributes`.
+    
     switch block {
     case .paragraph(let content), .heading(_, let content):
         self.appendContent(content, to: result, spacing: spacing, indentLevel: indentLevel, attributes: attributes?.textAttributes)
@@ -59,13 +67,13 @@ struct MultiBlockView: View {
         self.appendBlocks(children, to: result, indentLevel: indentLevel + 1)
         
     case .bulletedList(_, let items):
-        self.appendListItems(items, style: .bullet, to: result, indentLevel: indentLevel, spacing: spacing)
+        self.appendListItems(items, style: .bullet, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
         
     case .numberedList(_, let start, let items):
-        self.appendListItems(items, style: .number(start: start), to: result, indentLevel: indentLevel, spacing: spacing)
+        self.appendListItems(items, style: .number(start: start), to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
         
     case .taskList(_, let items):
-        self.appendListItems(items, style: .task, to: result, indentLevel: indentLevel, spacing: spacing)
+        self.appendListItems(items, style: .task, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
 
     default:
         break // Should not happen if coalescing logic is correct
@@ -83,7 +91,7 @@ struct MultiBlockView: View {
       case task
   }
   
-  private func appendListItems<T>(_ items: [T], style: ListStyle, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat) {
+  private func appendListItems<T>(_ items: [T], style: ListStyle, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat, attributes: AttributeContainer?) {
       for (index, item) in items.enumerated() {
           let children: [BlockNode]
           let isCompleted: Bool
@@ -128,6 +136,20 @@ struct MultiBlockView: View {
           markerAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: markerAttrStr.length))
           // Add standard color/font
            markerAttrStr.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.label, range: NSRange(location: 0, length: markerAttrStr.length))
+           
+           // Apply attributes to marker if present (e.g. font size)
+           if let attributes = attributes {
+                let temp = AttributedString(marker, attributes: attributes)
+                let nsTemp = temp.resolvingUIFonts() // Convert to NSAttributedString with font
+                // Merge into markerAttrStr
+                // Actually easier to just use the resolvingUIFonts logic helper if we can.
+                // But marker is plain string.
+                // Let's manually apply font if found in attributes
+                if let fontProp = attributes.fontProperties {
+                     let uiFont = fontProp.resolveUIFont()
+                     markerAttrStr.addAttribute(.font, value: uiFont, range: NSRange(location: 0, length: markerAttrStr.length))
+                }
+           }
           
           result.append(markerAttrStr)
           
@@ -146,7 +168,13 @@ struct MultiBlockView: View {
                   // We should pass the pStyle to `appendContent`.
                   
                   if case .paragraph(let c) = child {
-                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? spacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: nil)
+                       // Pass styles[.paragraph] attributes effectively?
+                       // Actually, we should use the paragraph style for the text content, NOT the list style.
+                       // So we need to fetch paragraph attributes.
+                       let pType = BlockNode.BlockType.paragraph
+                       let pAttributes = self.styles[pType]
+                       
+                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? spacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: pAttributes?.textAttributes)
                   } else {
                       // If it's not a paragraph (e.g. nested list immediately?), new line?
                       // Usually list item starts with paragraph.

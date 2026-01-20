@@ -218,7 +218,7 @@ public struct Markdown: View {
         .modifier(ScaledFontSizeModifier(attributes.fontProperties?.size))
         .environment(\.blockStyles, self.blockStyles)
         .background(
-          StyleProbe(types: [.paragraph, .heading(1), .heading(2), .heading(3), .heading(4), .heading(5), .heading(6)]) { styles in
+          StyleProbe(types: [.paragraph, .heading(1), .heading(2), .heading(3), .heading(4), .heading(5), .heading(6), .bulletedList, .numberedList, .taskList, .blockquote]) { styles in
             self.blockStyles = styles
           }
         )

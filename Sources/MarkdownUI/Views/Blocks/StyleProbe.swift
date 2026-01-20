@@ -83,6 +83,34 @@ private struct ProbeItem: View {
         )
       )
     // Add other types if we decide to merge them later
+    case .bulletedList:
+      self.theme.list.makeBody(
+        configuration: .init(
+          label: .init(ProbeInner(type: self.type)),
+          content: .init(block: .bulletedList(isTight: false, items: []))
+        )
+      )
+    case .numberedList:
+      self.theme.list.makeBody(
+        configuration: .init(
+          label: .init(ProbeInner(type: self.type)),
+          content: .init(block: .numberedList(isTight: false, start: 1, items: []))
+        )
+      )
+    case .taskList:
+      self.theme.list.makeBody(
+        configuration: .init(
+          label: .init(ProbeInner(type: self.type)),
+          content: .init(block: .taskList(isTight: false, items: []))
+        )
+      )
+    case .blockquote:
+      self.theme.blockquote.makeBody(
+        configuration: .init(
+          label: .init(ProbeInner(type: self.type)),
+          content: .init(block: .blockquote(children: []))
+        )
+      )
     default:
       EmptyView()
     }
