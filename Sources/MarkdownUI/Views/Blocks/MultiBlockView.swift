@@ -203,7 +203,9 @@ struct MultiBlockView: View {
            
            // Apply font
            if var fontProp = contentFontProperties {
-               fontProp.weight = .black
+               if case .bullet = style {
+                   fontProp.weight = .black
+               }
                 let uiFont = fontProp.resolveUIFont()
                 markerAttrStr.addAttribute(.font, value: uiFont, range: NSRange(location: 0, length: markerAttrStr.length))
            }
