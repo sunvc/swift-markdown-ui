@@ -22,7 +22,7 @@ extension InlineNode {
       // Block: $$ ... $$ (dot matches newlines)
       let blockPattern = "(?s)\\$\\$(.+?)\\$\\$"
       // Inline: $ ... $ (no newlines, negative lookahead for $)
-      let inlinePattern = "\\$(?!\\$)((?:\\\\\\$|[^$\\n])+)\\$"
+      let inlinePattern = "(?s)\\$(?!\\$)((?:\\\\\\$|[^$])+)\\$"
       
       // We will use a combined pattern to iterate through the string once,
       // prioritizing Block math (which matches $$) over Inline math.

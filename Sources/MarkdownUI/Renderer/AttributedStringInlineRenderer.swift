@@ -1,17 +1,44 @@
-import Foundation
+import SwiftUI
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
+extension Sequence where Element == InlineNode {
+  func renderAttributedString(
+    baseURL: URL?,
+    textStyles: InlineTextStyles,
+    softBreakMode: SoftBreak.Mode,
+    attributes: AttributeContainer,
+    colorScheme: ColorScheme
+  ) -> AttributedString {
+    var renderer = AttributedStringInlineRenderer(
+      baseURL: baseURL,
+      textStyles: textStyles,
+      softBreakMode: softBreakMode,
+      attributes: attributes,
+      colorScheme: colorScheme
+    )
+    renderer.render(self)
+    return renderer.result
+  }
+}
 
 extension InlineNode {
   func renderAttributedString(
     baseURL: URL?,
     textStyles: InlineTextStyles,
     softBreakMode: SoftBreak.Mode,
-    attributes: AttributeContainer
+    attributes: AttributeContainer,
+    colorScheme: ColorScheme
   ) -> AttributedString {
     var renderer = AttributedStringInlineRenderer(
       baseURL: baseURL,
       textStyles: textStyles,
       softBreakMode: softBreakMode,
-      attributes: attributes
+      attributes: attributes,
+      colorScheme: colorScheme
     )
     renderer.render(self)
     return renderer.result.resolvingFonts()
@@ -25,18 +52,27 @@ private struct AttributedStringInlineRenderer {
   private let textStyles: InlineTextStyles
   private let softBreakMode: SoftBreak.Mode
   private var attributes: AttributeContainer
+  private let colorScheme: ColorScheme
   private var shouldSkipNextWhitespace = false
 
   init(
     baseURL: URL?,
     textStyles: InlineTextStyles,
     softBreakMode: SoftBreak.Mode,
-    attributes: AttributeContainer
+    attributes: AttributeContainer,
+    colorScheme: ColorScheme
   ) {
     self.baseURL = baseURL
     self.textStyles = textStyles
     self.softBreakMode = softBreakMode
     self.attributes = attributes
+    self.colorScheme = colorScheme
+  }
+
+  mutating func render<S: Sequence>(_ inlines: S) where S.Element == InlineNode {
+    for inline in inlines {
+      self.render(inline)
+    }
   }
 
   mutating func render(_ inline: InlineNode) {
@@ -158,7 +194,31 @@ private struct AttributedStringInlineRenderer {
   }
 
   private mutating func renderMath(_ math: String) {
-    self.renderCode("$\(math)$")
+    let fontSize = self.attributes.fontProperties?.size ?? FontProperties.defaultSize
+    let weight = self.attributes.fontProperties?.weight ?? FontProperties.defaultWeight
+    let color = self.attributes.foregroundColor
+
+    let platformImage = MainActor.assumeIsolated {
+      MathImageGenerator.platformImage(
+        for: math,
+        fontSize: fontSize,
+        weight: weight,
+        color: color,
+        colorScheme: self.colorScheme
+      )
+    }
+
+    if let platformImage {
+      let attachment = NSTextAttachment()
+      #if os(macOS)
+      attachment.image = platformImage
+      #else
+      attachment.image = platformImage
+      #endif
+      self.result += AttributedString(NSAttributedString(attachment: attachment))
+    } else {
+      self.renderCode("$\(math)$")
+    }
   }
 }
 

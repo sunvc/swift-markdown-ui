@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The characteristics of a font.
-public struct FontProperties: Hashable, Sendable {
+public struct FontProperties: Hashable, @unchecked Sendable {
   /// The font family.
     public enum Family: Hashable,Sendable {
     /// The system font family.

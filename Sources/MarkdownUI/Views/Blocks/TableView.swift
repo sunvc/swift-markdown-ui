@@ -1,6 +1,6 @@
 import SwiftUI
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+
 struct TableView: View {
   @Environment(\.theme.table) private var table
   @Environment(\.tableBorderStyle.strokeStyle.lineWidth) private var borderWidth

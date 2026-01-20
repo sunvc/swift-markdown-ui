@@ -1,6 +1,6 @@
 import SwiftUI
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+
 struct ImageFlow: View {
   private enum Item: Hashable {
     case image(RawImageData)
@@ -27,7 +27,6 @@ struct ImageFlow: View {
   }
 }
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension ImageFlow {
   init?(_ inlines: [InlineNode]) {
     var items: [Item] = []

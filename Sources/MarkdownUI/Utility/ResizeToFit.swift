@@ -59,7 +59,6 @@ private struct SizePreference: PreferenceKey {
 
 // MARK: - Layout based
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 private struct ResizeToFit2: Layout {
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     guard let view = subviews.first else {

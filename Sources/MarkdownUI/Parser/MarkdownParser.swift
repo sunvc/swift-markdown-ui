@@ -7,7 +7,7 @@ extension Array where Element == BlockNode {
     let blocks = UnsafeNode.parseMarkdown(markdown) { document in
       document.children.compactMap(BlockNode.init(unsafeNode:))
     }
-    self.init((blocks ?? .init()).rewrite(InlineNode.parseMath))
+    self.init((blocks ?? .init()).coalesce().parseBlockMath().rewrite(InlineNode.parseMath))
   }
 
   func renderMarkdown() -> String {

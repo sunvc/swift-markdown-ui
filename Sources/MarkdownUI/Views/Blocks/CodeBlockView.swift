@@ -3,6 +3,7 @@ import SwiftUI
 struct CodeBlockView: View {
   @Environment(\.theme.codeBlock) private var codeBlock
   @Environment(\.codeSyntaxHighlighter) private var codeSyntaxHighlighter
+  @Environment(\.colorScheme) private var colorScheme
 
   private let fenceInfo: String?
   private let content: String
@@ -22,9 +23,30 @@ struct CodeBlockView: View {
     )
   }
 
+  @ViewBuilder
   private var label: some View {
-    self.codeSyntaxHighlighter.highlightCode(self.content, language: self.fenceInfo)
-      .textStyleFont()
-      .textStyleForegroundColor()
+    if self.fenceInfo == "math" {
+      TextStyleAttributesReader { attributes in
+        let fontSize = attributes.fontProperties?.size ?? FontProperties.defaultSize
+        let weight = attributes.fontProperties?.weight ?? FontProperties.defaultWeight
+        let color = attributes.foregroundColor
+        
+        if let image = MathImageGenerator.image(
+             for: self.content,
+             fontSize: fontSize,
+             weight: weight,
+             color: color,
+             colorScheme: self.colorScheme
+           ) {
+             image
+        } else {
+             Text(self.content)
+        }
+      }
+    } else {
+      self.codeSyntaxHighlighter.highlightCode(self.content, language: self.fenceInfo)
+        .textStyleFont()
+        .textStyleForegroundColor()
+    }
   }
 }

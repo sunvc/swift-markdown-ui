@@ -115,11 +115,12 @@ private struct TextInlineRenderer {
 
   private mutating func renderMath(_ math: String) {
     let fontSize = self.attributes.fontProperties?.size ?? FontProperties.defaultSize
+    let weight = self.attributes.fontProperties?.weight ?? FontProperties.defaultWeight
     let color = self.attributes.foregroundColor
     let colorScheme = self.colorScheme
     
     let image = MainActor.assumeIsolated {
-      MathImageGenerator.image(for: math, fontSize: fontSize, color: color, colorScheme: colorScheme)
+      MathImageGenerator.image(for: math, fontSize: fontSize, weight: weight, color: color, colorScheme: colorScheme)
     }
     
     if let image {
@@ -137,7 +138,8 @@ private struct TextInlineRenderer {
           baseURL: self.baseURL,
           textStyles: self.textStyles,
           softBreakMode: self.softBreakMode,
-          attributes: self.attributes
+          attributes: self.attributes,
+          colorScheme: self.colorScheme
         )
       )
   }

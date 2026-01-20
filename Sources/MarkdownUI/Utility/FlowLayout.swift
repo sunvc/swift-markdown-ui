@@ -1,6 +1,6 @@
 import SwiftUI
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+
 struct FlowLayout: Layout {
   let horizontalSpacing: CGFloat
   let verticalSpacing: CGFloat
@@ -31,7 +31,6 @@ struct FlowLayout: Layout {
   }
 }
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension FlowLayout {
   private struct Item {
     let index: Int

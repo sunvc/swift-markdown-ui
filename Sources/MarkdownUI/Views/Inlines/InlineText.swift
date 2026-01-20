@@ -18,6 +18,25 @@ struct InlineText: View {
 
   var body: some View {
     TextStyleAttributesReader { attributes in
+#if os(iOS)
+      TextView(
+        self.inlines.renderAttributedString(
+          baseURL: self.baseURL,
+          textStyles: .init(
+            code: self.theme.code,
+            emphasis: self.theme.emphasis,
+            strong: self.theme.strong,
+            strikethrough: self.theme.strikethrough,
+            link: self.theme.link
+          ),
+          softBreakMode: self.softBreakMode,
+          attributes: attributes,
+          colorScheme: self.colorScheme
+        )
+        .resolvingUIFonts()
+      )
+      .fixedSize(horizontal: false, vertical: true) // Ensure it grows with content
+#else
       self.inlines.renderText(
         baseURL: self.baseURL,
         textStyles: .init(
@@ -32,6 +51,7 @@ struct InlineText: View {
         attributes: attributes,
         colorScheme: self.colorScheme
       )
+#endif
     }
     .task(id: self.inlines) {
       self.inlineImages = (try? await self.loadInlineImages()) ?? [:]
