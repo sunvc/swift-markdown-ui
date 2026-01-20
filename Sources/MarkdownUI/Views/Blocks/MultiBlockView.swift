@@ -102,7 +102,7 @@ struct MultiBlockView: View {
       // listItem top margin = 0.25em (~4.25pt at 17pt)
       // paragraph bottom margin = 1em (~17pt)
       let defaultFontSize = FontProperties.defaultSize
-      let defaultListItemTop = defaultFontSize * 0.25
+      let defaultListItemTop = defaultFontSize * 0.5
       let defaultParagraphBottom = defaultFontSize * 1.0
       
       let listItemTopMargin = listItemAttributes?.margins.top ?? defaultListItemTop
