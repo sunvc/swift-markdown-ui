@@ -111,6 +111,13 @@ private struct ProbeItem: View {
           content: .init(block: .blockquote(children: []))
         )
       )
+    case .listItem:
+      self.theme.listItem.makeBody(
+        configuration: .init(
+          label: .init(ProbeInner(type: self.type)),
+          content: .init(block: .paragraph(content: [])) // ListItem content irrelevant for probe
+        )
+      )
     default:
       EmptyView()
     }

@@ -34,7 +34,7 @@ struct MultiBlockView: View {
     }
   }
 
-  private func appendBlock(_ block: BlockNode, to result: NSMutableAttributedString, indentLevel: Int, isLast: Bool, nextBlock: BlockNode?) {
+  private func appendBlock(_ block: BlockNode, to result: NSMutableAttributedString, indentLevel: Int, isLast: Bool, nextBlock: BlockNode?, overrideSpacing: CGFloat? = nil) {
     // Determine styles
     let type = block.blockType ?? .paragraph // fallback
     let attributes = styles[type] ?? styles[.paragraph] // fallback
@@ -43,7 +43,9 @@ struct MultiBlockView: View {
     let thisBottom = attributes?.margins.bottom ?? 0
     var spacing: CGFloat = thisBottom
 
-    if let nextBlock = nextBlock,
+    if let override = overrideSpacing {
+        spacing = override
+    } else if let nextBlock = nextBlock,
        let nextType = nextBlock.blockType,
        let nextAttributes = styles[nextType] {
        let nextTop = nextAttributes.margins.top ?? 0
@@ -66,14 +68,14 @@ struct MultiBlockView: View {
         // Indent level increases
         self.appendBlocks(children, to: result, indentLevel: indentLevel + 1)
         
-    case .bulletedList(_, let items):
-        self.appendListItems(items, style: .bullet, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
+    case .bulletedList(let isTight, let items):
+        self.appendListItems(items, style: .bullet, isTight: isTight, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
         
-    case .numberedList(_, let start, let items):
-        self.appendListItems(items, style: .number(start: start), to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
+    case .numberedList(let isTight, let start, let items):
+        self.appendListItems(items, style: .number(start: start), isTight: isTight, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
         
-    case .taskList(_, let items):
-        self.appendListItems(items, style: .task, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
+    case .taskList(let isTight, let items):
+        self.appendListItems(items, style: .task, isTight: isTight, to: result, indentLevel: indentLevel, spacing: spacing, attributes: attributes?.textAttributes)
 
     default:
         break // Should not happen if coalescing logic is correct
@@ -91,7 +93,19 @@ struct MultiBlockView: View {
       case task
   }
   
-  private func appendListItems<T>(_ items: [T], style: ListStyle, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat, attributes: AttributeContainer?) {
+  private func appendListItems<T>(_ items: [T], style: ListStyle, isTight: Bool, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat, attributes: AttributeContainer?) {
+      let listItemAttributes = self.styles[.listItem]
+      // Basic Theme listItem has top margin 0.25em.
+      let listItemTopMargin = listItemAttributes?.margins.top ?? 0
+      
+      // Determine spacing between items
+      // If tight, use just the list item margin?
+      // If loose, use paragraph spacing?
+      // Actually, if tight, we usually want minimal spacing, but respecting the listItem margin.
+      // If loose, we want paragraph spacing (usually 1em) + listItem margin.
+      
+      // Also, we need to apply this spacing to the *end* of the item content.
+      
       for (index, item) in items.enumerated() {
           let children: [BlockNode]
           let isCompleted: Bool
@@ -104,6 +118,32 @@ struct MultiBlockView: View {
               isCompleted = item.isCompleted
           } else {
               continue
+          }
+          
+          // Calculate spacing for this item
+          // The last item's spacing depends on the outer context (passed `spacing` arg).
+          // Intermediate items spacing depends on `isTight`.
+          
+          let itemSpacing: CGFloat
+          if index == items.count - 1 {
+              itemSpacing = spacing // Outer spacing
+          } else {
+              if isTight {
+                   // For tight lists, usually 0 extra spacing, but we respect the listItem margin of the NEXT item.
+                   // Since we can't easily peek next item's margin (it's same style), we use current listItem margin top?
+                   // Actually, margin logic is max(prev.bottom, next.top).
+                   // If tight, prev.bottom is ignored. So just next.top.
+                   itemSpacing = listItemTopMargin
+              } else {
+                   // Loose list.
+                   // Spacing is max(prev.bottom, next.top).
+                   // Paragraph bottom (1em) vs ListItem top (0.25em).
+                   // So ~1em.
+                   // We need paragraph bottom margin.
+                   let pAttributes = self.styles[.paragraph]
+                   let pBottom = pAttributes?.margins.bottom ?? 0
+                   itemSpacing = max(pBottom, listItemTopMargin)
+              }
           }
           
           // Marker
@@ -174,7 +214,7 @@ struct MultiBlockView: View {
                        let pType = BlockNode.BlockType.paragraph
                        let pAttributes = self.styles[pType]
                        
-                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? spacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: pAttributes?.textAttributes)
+                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? itemSpacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: pAttributes?.textAttributes)
                   } else {
                       // If it's not a paragraph (e.g. nested list immediately?), new line?
                       // Usually list item starts with paragraph.
@@ -185,7 +225,8 @@ struct MultiBlockView: View {
                   // Subsequent blocks
                   result.append(NSAttributedString(string: "\n"))
                   // They should be indented to align with text (base + itemIndent)
-                   self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil)
+                  // Pass itemSpacing if it's the last child
+                   self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil, overrideSpacing: (childIndex == children.count - 1) ? itemSpacing : nil)
               }
           }
           
