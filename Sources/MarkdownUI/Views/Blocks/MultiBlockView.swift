@@ -94,15 +94,16 @@ struct MultiBlockView: View {
   }
   
   private func appendListItems<T>(_ items: [T], style: ListStyle, isTight: Bool, to result: NSMutableAttributedString, indentLevel: Int, spacing: CGFloat, attributes: AttributeContainer?) {
-      let listItemAttributes = self.styles[.listItem]
+      // Use listItem attributes for content to ensure specific list styling is respected
+      let listItemType = BlockNode.BlockType.listItem
+      let listItemAttributes = self.styles[listItemType]
       let listItemTopMargin = listItemAttributes?.margins.top ?? 0
       
       // Calculate Indentation based on Font Size
-      // Standard em is typically the font size.
-      // We assume default paragraph font size for indentation unit if available, else 17.
-      let pAttributes = self.styles[.paragraph]
-      let fontSize = pAttributes?.textAttributes.fontProperties?.size ?? FontProperties.defaultSize
-      let indentUnit = fontSize * 2.0 // 2em indentation is standard for lists
+      // Use the font size from the list item itself, or fallback to paragraph/default
+      let contentFontProperties = listItemAttributes?.textAttributes.fontProperties ?? self.styles[.paragraph]?.textAttributes.fontProperties
+      let fontSize = contentFontProperties?.size ?? FontProperties.defaultSize
+      let indentUnit = fontSize * 2.0 
       
       for (index, item) in items.enumerated() {
           let children: [BlockNode]
@@ -126,7 +127,11 @@ struct MultiBlockView: View {
               if isTight {
                    itemSpacing = listItemTopMargin
               } else {
-                   let pBottom = pAttributes?.margins.bottom ?? 0
+                   // For loose lists, we want to ensure paragraph spacing is respected.
+                   // If children are paragraphs, they have their own bottom margin.
+                   // But `appendBlock` logic uses `spacing` arg for the last element.
+                   // So we pass `max(pBottom, listItemTop)` to ensure separation.
+                   let pBottom = self.styles[.paragraph]?.margins.bottom ?? 0
                    itemSpacing = max(pBottom, listItemTopMargin)
               }
           }
@@ -135,16 +140,14 @@ struct MultiBlockView: View {
           let marker: String
           switch style {
           case .bullet:
-              // Level-based bullets
               let level = indentLevel + 1
               if level == 1 { marker = "•\t" }
               else if level == 2 { marker = "○\t" }
               else { marker = "■\t" }
-              
           case .number(let start):
               marker = "\(start + index).\t"
           case .task:
-              marker = isCompleted ? "☑\t" : "☐\t" // Better Unicode checkmarks
+              marker = isCompleted ? "☑\t" : "☐\t"
           }
           
           // Indentation logic
@@ -156,26 +159,24 @@ struct MultiBlockView: View {
           pStyle.headIndent = baseIndent + itemIndent
           pStyle.paragraphSpacing = 0 
           
-          // Set tab stops to align text after marker
           pStyle.tabStops = [NSTextTab(textAlignment: .left, location: baseIndent + itemIndent, options: [:])]
           
           let markerAttrStr = NSMutableAttributedString(string: marker)
           markerAttrStr.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: markerAttrStr.length))
-          markerAttrStr.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.label, range: NSRange(location: 0, length: markerAttrStr.length))
+          // Use standard label color for marker to avoid it disappearing if list item text has peculiar color, 
+          // OR match list item text color? Usually matching text is better.
+          // But user complained "did not achieve effect". 
+          // Let's use the listItemAttributes for marker too.
+          if let color = listItemAttributes?.textAttributes.foregroundColor {
+               markerAttrStr.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor(color), range: NSRange(location: 0, length: markerAttrStr.length))
+          } else {
+               markerAttrStr.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.label, range: NSRange(location: 0, length: markerAttrStr.length))
+          }
            
-           if let attributes = attributes {
-                let temp = AttributedString(marker, attributes: attributes)
-                let nsTemp = temp.resolvingUIFonts()
-                if let fontProp = attributes.fontProperties {
-                     let uiFont = fontProp.resolveUIFont()
-                     markerAttrStr.addAttribute(.font, value: uiFont, range: NSRange(location: 0, length: markerAttrStr.length))
-                }
-           } else if let pAttributes = pAttributes {
-                // Fallback to paragraph font for marker if list has no font
-                if let fontProp = pAttributes.textAttributes.fontProperties {
-                     let uiFont = fontProp.resolveUIFont()
-                     markerAttrStr.addAttribute(.font, value: uiFont, range: NSRange(location: 0, length: markerAttrStr.length))
-                }
+           // Apply font
+           if let fontProp = contentFontProperties {
+                let uiFont = fontProp.resolveUIFont()
+                markerAttrStr.addAttribute(.font, value: uiFont, range: NSRange(location: 0, length: markerAttrStr.length))
            }
           
           result.append(markerAttrStr)
@@ -183,7 +184,8 @@ struct MultiBlockView: View {
           for (childIndex, child) in children.enumerated() {
               if childIndex == 0 {
                   if case .paragraph(let c) = child {
-                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? itemSpacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: pAttributes?.textAttributes, indentUnit: indentUnit)
+                       // CRITICAL FIX: Use listItemAttributes for content
+                       self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? itemSpacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: listItemAttributes?.textAttributes, indentUnit: indentUnit)
                   } else {
                       result.append(NSAttributedString(string: "\n"))
                       self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil, overrideSpacing: (childIndex == children.count - 1) ? itemSpacing : nil)
