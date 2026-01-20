@@ -83,7 +83,23 @@ struct MultiBlockView: View {
     
     // Add newline if not last in this sequence
     if !isLast {
-       result.append(NSAttributedString(string: "\n"))
+       // CRITICAL FIX: The newline must carry the paragraph style (spacing/indent) of the preceding block
+       // to ensure the spacing is actually rendered by UITextView.
+       // We reuse the attributes calculated for the block content if possible, or at least the spacing.
+       
+       let pStyle = NSMutableParagraphStyle()
+       pStyle.paragraphSpacing = spacing
+       // We might need to match indentation of the *next* block? 
+       // Or the current? Paragraph spacing applies to the gap *after* the newline.
+       // So it belongs to the current block.
+       
+       // We should try to capture the attributes used in the switch cases to apply here.
+       // But `appendContent` creates its own pStyle internally.
+       
+       // Simplified approach: Create a newline with the correct spacing.
+       let newline = NSMutableAttributedString(string: "\n")
+       newline.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: 1))
+       result.append(newline)
     }
   }
 
@@ -197,17 +213,37 @@ struct MultiBlockView: View {
                        // CRITICAL FIX: Use listItemAttributes for content
                        self.appendContent(c, to: result, spacing: (childIndex == children.count - 1) ? itemSpacing : 0, indentLevel: indentLevel, overrideParagraphStyle: pStyle, attributes: listItemAttributes?.textAttributes, indentUnit: indentUnit)
                   } else {
-                      result.append(NSAttributedString(string: "\n"))
+                      let newline = NSMutableAttributedString(string: "\n")
+                      newline.addAttribute(NSAttributedString.Key.paragraphStyle, value: pStyle, range: NSRange(location: 0, length: 1))
+                      result.append(newline)
                       self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil, overrideSpacing: (childIndex == children.count - 1) ? itemSpacing : nil)
                   }
               } else {
-                  result.append(NSAttributedString(string: "\n"))
+                  let newline = NSMutableAttributedString(string: "\n")
+                  // This intermediate newline should probably have 0 spacing if we are inside an item?
+                  // Or should it have itemSpacing if it separates blocks?
+                  // Usually 0.
+                  let interBlockStyle = pStyle.mutableCopy() as! NSMutableParagraphStyle
+                  interBlockStyle.paragraphSpacing = 0
+                  newline.addAttribute(NSAttributedString.Key.paragraphStyle, value: interBlockStyle, range: NSRange(location: 0, length: 1))
+                  result.append(newline)
+                  
                    self.appendBlock(child, to: result, indentLevel: indentLevel + 1, isLast: childIndex == children.count - 1, nextBlock: nil, overrideSpacing: (childIndex == children.count - 1) ? itemSpacing : nil)
               }
           }
           
           if index < items.count - 1 {
-              result.append(NSAttributedString(string: "\n"))
+              // Newline between list items
+              // It must carry the spacing of the CURRENT item (itemSpacing) to separate it from the next.
+              let newline = NSMutableAttributedString(string: "\n")
+              let spacingStyle = NSMutableParagraphStyle()
+              spacingStyle.paragraphSpacing = itemSpacing
+              // Indent? Does not matter for empty newline, but good for consistency.
+              spacingStyle.firstLineHeadIndent = baseIndent
+              spacingStyle.headIndent = baseIndent
+              
+              newline.addAttribute(NSAttributedString.Key.paragraphStyle, value: spacingStyle, range: NSRange(location: 0, length: 1))
+              result.append(newline)
           }
       }
   }
