@@ -39,7 +39,7 @@ struct MultiBlockView: View {
       default: content = []
       }
 
-      let textStyles = TextStyles(
+      let textStyles = InlineTextStyles(
         code: self.theme.code,
         emphasis: self.theme.emphasis,
         strong: self.theme.strong,

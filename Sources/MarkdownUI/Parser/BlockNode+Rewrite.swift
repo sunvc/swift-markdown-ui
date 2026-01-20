@@ -43,6 +43,8 @@ extension BlockNode {
           }
         )
       )
+    case .multiBlock(let children):
+      return try r(.multiBlock(children: try children.rewrite(r)))
     default:
       return try r(self)
     }
@@ -97,6 +99,8 @@ extension BlockNode {
           }
         )
       ]
+    case .multiBlock(let children):
+      return [.multiBlock(children: try children.rewrite(r))]
     default:
       return [self]
     }

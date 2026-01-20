@@ -19,6 +19,8 @@ extension BlockNode {
       return [.numberedList(isTight: isTight, start: start, items: items.map { $0.parseBlockMath() })]
     case .taskList(let isTight, let items):
       return [.taskList(isTight: isTight, items: items.map { $0.parseBlockMath() })]
+    case .multiBlock(let children):
+      return children.parseBlockMath()
     case .heading, .codeBlock, .htmlBlock, .table, .thematicBreak:
       return [self]
     }
