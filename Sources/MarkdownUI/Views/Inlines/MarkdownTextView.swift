@@ -4,9 +4,8 @@ import UIKit
 
 struct TextView: UIViewRepresentable {
     @Environment(\.font) private var font
-    
-    var attributedText: NSAttributedString
 
+    var attributedText: NSAttributedString
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -49,12 +48,12 @@ struct TextView: UIViewRepresentable {
             options: [.usesLineFragmentOrigin, .usesFontLeading],
             context: nil
         )
-        
+
         // Return the calculated content size (both width and height)
         // This ensures the view shrinks to fit short text horizontally.
         return CGSize(width: ceil(dimensions.width), height: ceil(dimensions.height))
     }
-    
+
     class Coordinator: NSObject, UITextViewDelegate {
         var parent: TextView
 
@@ -65,14 +64,34 @@ struct TextView: UIViewRepresentable {
 }
 
 final class AutoDeselectTextView: UITextView {
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
 
-    override func copy(_ sender: Any?) {
-        super.copy(sender)
+        // 移除系统默认菜单
+        builder.remove(menu: .standardEdit)
 
-        // 复制完成后，异步清除选中状态
+        // 添加自定义菜单
+        let copy = UIAction(title: "复制") { _ in
+            let range = self.selectedRange
+            UIPasteboard.general.string = (self.text as NSString).substring(with: range)
+            self.clearSelection()
+        }
+
+        let highlight = UIAction(title: "高亮") { _ in
+            print("高亮选中文本")
+            self.clearSelection()
+        }
+
+        builder.insertChild(
+            UIMenu(title: "", children: [copy, highlight]),
+            atStartOfMenu: .standardEdit
+        )
+    }
+
+    private func clearSelection() {
         DispatchQueue.main.async {
             self.selectedRange = NSRange(location: 0, length: 0)
-            self.resignFirstResponder() // 可选：收起菜单 & 光标
+            self.resignFirstResponder()
         }
     }
 }
