@@ -23,7 +23,6 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/swiftlang/swift-cmark", from: "0.7.1"),
-    .package(url: "https://github.com/sunvc/swiftui-math", from: "1.2.0"),
   ],
   targets: [
     .target(
@@ -31,7 +30,6 @@ let package = Package(
       dependencies: [
         .product(name: "cmark-gfm", package: "swift-cmark"),
         .product(name: "cmark-gfm-extensions", package: "swift-cmark"),
-        .product(name: "SwiftUIMath", package: "swiftui-math"),
       ]
     ),
     .target(name: "Splash",dependencies: []),

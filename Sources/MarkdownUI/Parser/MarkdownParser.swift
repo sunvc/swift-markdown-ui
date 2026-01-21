@@ -7,7 +7,7 @@ extension Array where Element == BlockNode {
     let blocks = UnsafeNode.parseMarkdown(markdown) { document in
       document.children.compactMap(BlockNode.init(unsafeNode:))
     }
-    self.init((blocks ?? .init()).parseBlockMath().coalesce().rewrite(InlineNode.parseMath))
+    self.init(blocks ?? .init())
   }
 
   func renderMarkdown() -> String {
@@ -421,10 +421,6 @@ extension UnsafeNode {
       guard let node = cmark_node_new(CMARK_NODE_IMAGE) else { return nil }
       cmark_node_set_url(node, source)
       children.compactMap(UnsafeNode.make).forEach { cmark_node_append_child(node, $0) }
-      return node
-    case .math(let content):
-      guard let node = cmark_node_new(CMARK_NODE_TEXT) else { return nil }
-      cmark_node_set_literal(node, "$\(content)$")
       return node
     }
   }
