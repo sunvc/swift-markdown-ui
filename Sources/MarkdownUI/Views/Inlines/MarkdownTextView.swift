@@ -13,7 +13,7 @@ struct TextView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextView {
-        let view = UITextView()
+        let view = AutoDeselectTextView()
         view.delegate = context.coordinator
 
         // 基础配置
@@ -63,4 +63,18 @@ struct TextView: UIViewRepresentable {
         }
     }
 }
+
+final class AutoDeselectTextView: UITextView {
+
+    override func copy(_ sender: Any?) {
+        super.copy(sender)
+
+        // 复制完成后，异步清除选中状态
+        DispatchQueue.main.async {
+            self.selectedRange = NSRange(location: 0, length: 0)
+            self.resignFirstResponder() // 可选：收起菜单 & 光标
+        }
+    }
+}
+
 #endif
