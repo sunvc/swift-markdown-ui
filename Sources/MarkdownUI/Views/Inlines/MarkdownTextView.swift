@@ -63,7 +63,35 @@ struct TextView: UIViewRepresentable {
     }
 }
 
-final class AutoDeselectTextView: UITextView {
+final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
+    private lazy var editMenuInteraction = UIEditMenuInteraction(delegate: self)
+
+    override init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+
+    override func editMenu(
+        for textRange: UITextRange,
+        suggestedActions: [UIMenuElement]
+    ) -> UIMenu? {
+        let copy = UIAction(title: "复制") { _ in
+            let range = self.selectedRange
+            guard range.length > 0 else { return }
+
+            UIPasteboard.general.string =
+                (self.text as NSString).substring(with: range)
+
+            self.selectedRange = NSRange(location: 0, length: 0)
+            self.resignFirstResponder()
+        }
+
+        return UIMenu(children: [copy])
+    }
+
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
 
