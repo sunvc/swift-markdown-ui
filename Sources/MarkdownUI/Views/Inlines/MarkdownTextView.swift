@@ -78,7 +78,7 @@ final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
         for textRange: UITextRange,
         suggestedActions: [UIMenuElement]
     ) -> UIMenu? {
-        let copy = UIAction(title: "复制") { _ in
+        let copy = UIAction(title: "解释") { _ in
             let range = self.selectedRange
             guard range.length > 0 else { return }
 
@@ -88,8 +88,9 @@ final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
             self.selectedRange = NSRange(location: 0, length: 0)
             self.resignFirstResponder()
         }
-
-        return UIMenu(children: [copy, copy, copy])
+        var suggestedActions = suggestedActions
+        suggestedActions.insert(copy, at: 0)
+        return UIMenu(children: suggestedActions)
     }
 
     private func clearSelection() {
