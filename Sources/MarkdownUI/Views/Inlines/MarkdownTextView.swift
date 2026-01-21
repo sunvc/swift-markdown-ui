@@ -89,31 +89,7 @@ final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
             self.resignFirstResponder()
         }
 
-        return UIMenu(children: [copy])
-    }
-
-    override func buildMenu(with builder: UIMenuBuilder) {
-        super.buildMenu(with: builder)
-
-        // 移除系统默认菜单
-        builder.remove(menu: .standardEdit)
-
-        // 添加自定义菜单
-        let copy = UIAction(title: "复制") { _ in
-            let range = self.selectedRange
-            UIPasteboard.general.string = (self.text as NSString).substring(with: range)
-            self.clearSelection()
-        }
-
-        let highlight = UIAction(title: "高亮") { _ in
-            print("高亮选中文本")
-            self.clearSelection()
-        }
-
-        builder.insertChild(
-            UIMenu(title: "操作", children: [copy, highlight]),
-            atStartOfMenu: .root
-        )
+        return UIMenu(children: [copy, copy, copy])
     }
 
     private func clearSelection() {
