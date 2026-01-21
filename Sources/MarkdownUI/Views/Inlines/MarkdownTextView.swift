@@ -84,7 +84,7 @@ final class AutoDeselectTextView: UITextView {
 
         builder.insertChild(
             UIMenu(title: "", children: [copy, highlight]),
-            atStartOfMenu: .standardEdit
+            atStartOfMenu: .root
         )
     }
 
