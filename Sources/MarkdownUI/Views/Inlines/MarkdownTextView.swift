@@ -4,14 +4,14 @@ import UIKit
 
 struct TextView: UIViewRepresentable {
     @Environment(\.font) private var font
+    @Environment(\.menus) private var menus
 
     var attributedText: NSAttributedString
-
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    func makeUIView(context: Context) -> UITextView {
+    func makeUIView(context: Context) -> AutoDeselectTextView {
         let view = AutoDeselectTextView()
         view.delegate = context.coordinator
 
@@ -32,8 +32,9 @@ struct TextView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: UITextView, context: Context) {
+    func updateUIView(_ uiView: AutoDeselectTextView, context: Context) {
         uiView.attributedText = attributedText
+        uiView.menuElements = menus
     }
 
     func sizeThatFits(
@@ -63,9 +64,8 @@ struct TextView: UIViewRepresentable {
     }
 }
 
-final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
-    private lazy var editMenuInteraction = UIEditMenuInteraction(delegate: self)
-
+final class AutoDeselectTextView: UITextView {
+    var menuElements: [UIMenuElement] = []
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
     }
@@ -74,23 +74,16 @@ final class AutoDeselectTextView: UITextView, UIEditMenuInteractionDelegate {
         super.init(coder: coder)
     }
 
+    override func copy(_ sender: Any?) {
+        super.copy(sender)
+        clearSelection()
+    }
+
     override func editMenu(
         for textRange: UITextRange,
         suggestedActions: [UIMenuElement]
     ) -> UIMenu? {
-        let copy = UIAction(title: "解释") { _ in
-            let range = self.selectedRange
-            guard range.length > 0 else { return }
-
-            UIPasteboard.general.string =
-                (self.text as NSString).substring(with: range)
-
-            self.selectedRange = NSRange(location: 0, length: 0)
-            self.resignFirstResponder()
-        }
-        var suggestedActions = suggestedActions
-        suggestedActions.insert(copy, at: 0)
-        return UIMenu(children: suggestedActions)
+        return UIMenu(children: menuElements + suggestedActions)
     }
 
     private func clearSelection() {
