@@ -4,7 +4,6 @@ import UIKit
 
 struct TextView: UIViewRepresentable {
     @Environment(\.font) private var font
-    @Environment(\.menus) private var menus
 
     var attributedText: NSAttributedString
     func makeCoordinator() -> Coordinator {
@@ -34,7 +33,6 @@ struct TextView: UIViewRepresentable {
 
     func updateUIView(_ uiView: AutoDeselectTextView, context: Context) {
         uiView.attributedText = attributedText
-        uiView.menuElements = menus
     }
 
     func sizeThatFits(
@@ -65,7 +63,6 @@ struct TextView: UIViewRepresentable {
 }
 
 final class AutoDeselectTextView: UITextView {
-    var menuElements: [MenuItem] = []
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
     }
@@ -83,6 +80,7 @@ final class AutoDeselectTextView: UITextView {
         for textRange: UITextRange,
         suggestedActions: [UIMenuElement]
     ) -> UIMenu? {
+        let menuElements = MarkdownConfig.shared.menus
         if menuElements.count > 0 {
             var menus: [UIMenuElement] = []
             for item in menuElements {

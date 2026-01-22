@@ -210,7 +210,6 @@ public struct Markdown: View {
     private let content: MarkdownContent
     private let baseURL: URL?
     private let imageBaseURL: URL?
-    private let menus: [MenuItem]
 
     /// Creates a Markdown view from a Markdown content value.
     /// - Parameters:
@@ -225,12 +224,10 @@ public struct Markdown: View {
         _ content: MarkdownContent,
         baseURL: URL? = nil,
         imageBaseURL: URL? = nil,
-        menus: [MenuItem] = []
     ) {
         self.content = content
         self.baseURL = baseURL
         self.imageBaseURL = imageBaseURL ?? baseURL
-        self.menus = menus
     }
 
     public var body: some View {
@@ -262,7 +259,6 @@ public struct Markdown: View {
         .textStyle(text)
         .environment(\.baseURL, baseURL)
         .environment(\.imageBaseURL, imageBaseURL)
-        .environment(\.menus, menus)
     }
 
     private var blocks: [BlockNode] {
@@ -284,13 +280,11 @@ extension Markdown {
         _ markdown: String,
         baseURL: URL? = nil,
         imageBaseURL: URL? = nil,
-        menus: [MenuItem] = []
     ) {
         self.init(
             MarkdownContent(markdown),
             baseURL: baseURL,
             imageBaseURL: imageBaseURL,
-            menus: menus
         )
     }
 
@@ -338,10 +332,9 @@ extension Markdown {
     public init(
         baseURL: URL? = nil,
         imageBaseURL: URL? = nil,
-        menus: [MenuItem] = [],
         @MarkdownContentBuilder content: () -> MarkdownContent
     ) {
-        self.init(content(), baseURL: baseURL, imageBaseURL: imageBaseURL, menus: menus)
+        self.init(content(), baseURL: baseURL, imageBaseURL: imageBaseURL)
     }
 }
 
