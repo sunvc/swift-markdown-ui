@@ -42,17 +42,26 @@ struct TextView: UIViewRepresentable {
         uiView: UITextView,
         context: Context
     ) -> CGSize? {
-        let targetWidth = proposal.width ?? .greatestFiniteMagnitude
+        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
 
-        let dimensions = attributedText.boundingRect(
-            with: CGSize(width: targetWidth, height: .greatestFiniteMagnitude),
+        let unconstrained = attributedText.boundingRect(
+            with: CGSize(width: .greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
             context: nil
         )
 
-        // Return the calculated content size (both width and height)
-        // This ensures the view shrinks to fit short text horizontally.
-        return CGSize(width: ceil(dimensions.width), height: ceil(dimensions.height))
+        let width = min(ceil(unconstrained.width), maxWidth)
+
+        let constrained = attributedText.boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil
+        )
+
+        return CGSize(
+            width: width,
+            height: ceil(constrained.height)
+        )
     }
 
     class Coordinator: NSObject, UITextViewDelegate {
