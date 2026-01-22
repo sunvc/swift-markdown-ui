@@ -39,7 +39,7 @@ struct TextView: UIViewRepresentable {
 
     func sizeThatFits(
         _ proposal: ProposedViewSize,
-        uiView: UITextView,
+        uiView: AutoDeselectTextView,
         context: Context
     ) -> CGSize? {
         let maxWidth = proposal.width ?? .greatestFiniteMagnitude
