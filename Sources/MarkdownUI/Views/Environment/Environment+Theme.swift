@@ -77,13 +77,3 @@ private struct ThemeKey: EnvironmentKey {
     static let defaultValue: Theme = .basic
 }
 
-extension EnvironmentValues {
-    var menus: [UIMenuElement] {
-        get { self[MenusKey.self] }
-        set { self[MenusKey.self] = newValue }
-    }
-}
-
-private struct MenusKey: EnvironmentKey {
-    static let defaultValue: [UIMenuElement] = []
-}

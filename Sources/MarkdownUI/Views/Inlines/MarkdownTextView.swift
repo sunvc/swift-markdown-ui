@@ -65,7 +65,7 @@ struct TextView: UIViewRepresentable {
 }
 
 final class AutoDeselectTextView: UITextView {
-    var menuElements: [UIMenuElement] = []
+    var menuElements: [MenuItem] = []
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
     }
@@ -83,7 +83,27 @@ final class AutoDeselectTextView: UITextView {
         for textRange: UITextRange,
         suggestedActions: [UIMenuElement]
     ) -> UIMenu? {
-        return UIMenu(children: menuElements + suggestedActions)
+        if menuElements.count > 0 {
+            var menus: [UIMenuElement] = []
+            for item in menuElements {
+                menus.append(UIAction(title: item.title, image: item.image) { _ in
+                    if let range = self.selectedTextRange,
+                       let selectedText = self.text(in: range)
+                    {
+                        if item.action(selectedText) {
+                            self.clearSelection()
+                        }
+                    } else {
+                        if item.action("") {
+                            self.clearSelection()
+                        }
+                    }
+                })
+            }
+            return UIMenu(children: menus)
+        } else {
+            return UIMenu(children: suggestedActions)
+        }
     }
 
     private func clearSelection() {
