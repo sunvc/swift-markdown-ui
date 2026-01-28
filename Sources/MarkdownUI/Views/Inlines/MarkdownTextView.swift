@@ -82,9 +82,9 @@ final class AutoDeselectTextView: UITextView {
     ) -> UIMenu? {
         let menuElements = MarkdownConfig.shared.menus
         if menuElements.count > 0 {
-            var menus: [UIMenuElement] = []
-            for item in menuElements {
-                menus.append(UIAction(title: item.title, image: item.image) { _ in
+            var menus: [UIMenuElement] = suggestedActions
+            for item in menuElements.reversed() {
+                menus.insert(UIAction(title: item.title, image: item.image) { _ in
                     if let range = self.selectedTextRange,
                        let selectedText = self.text(in: range)
                     {
@@ -96,7 +96,7 @@ final class AutoDeselectTextView: UITextView {
                             self.clearSelection()
                         }
                     }
-                })
+                }, at: 0)
             }
             return UIMenu(children: menus)
         } else {

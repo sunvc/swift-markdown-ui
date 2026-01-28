@@ -21,7 +21,6 @@ struct TableView: View {
       )
     )
   }
-
   private var label: some View {
     Grid(horizontalSpacing: self.borderWidth, verticalSpacing: self.borderWidth) {
       ForEach(0..<self.rowCount, id: \.self) { row in
