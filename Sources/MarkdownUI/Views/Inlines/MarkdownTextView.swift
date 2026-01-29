@@ -84,19 +84,29 @@ final class AutoDeselectTextView: UITextView {
         if menuElements.count > 0 {
             var menus: [UIMenuElement] = suggestedActions
             for item in menuElements.reversed() {
-                menus.insert(UIAction(title: item.title, image: item.image) { _ in
-                    if let range = self.selectedTextRange,
-                       let selectedText = self.text(in: range)
-                    {
-                        if item.action(selectedText) {
-                            self.clearSelection()
-                        }
-                    } else {
-                        if item.action("") {
-                            self.clearSelection()
-                        }
-                    }
-                }, at: 0)
+                menus.insert(
+                    UIMenu(
+                        identifier: .init(item.title),
+                        options: .displayInline,
+                        children: [
+                            UIAction(title: item.title, image: item.image) { _ in
+                                if let range = self.selectedTextRange,
+                                   let selectedText = self.text(in: range)
+                                {
+                                    if item.action(selectedText) {
+                                        self.clearSelection()
+                                    }
+                                } else {
+                                    if item.action("") {
+                                        self.clearSelection()
+                                    }
+                                }
+                            }
+                        ]
+                    ),
+                    at: 1
+                )
+               
             }
             return UIMenu(children: menus)
         } else {
