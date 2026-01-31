@@ -1,5 +1,19 @@
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
+
+#if os(iOS)
+fileprivate typealias PlatformFont = UIFont
+fileprivate typealias PlatformColor = UIColor
+#elseif os(macOS)
+fileprivate typealias PlatformFont = NSFont
+fileprivate typealias PlatformColor = NSColor
+#endif
+
 struct MultiBlockView: View {
     let blocks: [BlockNode]
 
@@ -257,14 +271,26 @@ struct MultiBlockView: View {
                 offset: CGFloat,
                 padding: CGFloat = 6 // 增加 padding 参数
             ) -> [NSAttributedString.Key: Any] {
+                #if os(iOS)
                 return [
                     .font: UIFont.systemFont(ofSize: size, weight: .medium),
                     .baselineOffset: offset,
                     .foregroundColor: UIColor.label,
                     .kern: padding // 设置字间距，这会直接增加数字或符号后的空隙
                 ]
+                #elseif os(macOS)
+                return [
+                    .font: NSFont.systemFont(ofSize: size, weight: .medium),
+                    .baselineOffset: offset,
+                    .foregroundColor: NSColor.labelColor,
+                    .kern: padding
+                ]
+                #else
+                return [.baselineOffset: offset, .kern: padding]
+                #endif
             }
             
+            #if os(iOS)
             func createMarkerImage(size: CGFloat, isHollow: Bool, isSquare: Bool = false, padding: CGFloat = 5) -> UIImage {
                 // 图片的总宽度 = 形状大小 + 你想要的间距
                 let totalSize = CGSize(width: size + padding, height: size)
@@ -295,30 +321,41 @@ struct MultiBlockView: View {
                 
                 return NSAttributedString(attachment: attachment)
             }
+            #endif
             
+            #if os(iOS)
             let currentFont: UIFont
             if let fontProp = contentFontProperties {
                 currentFont = fontProp.resolveUIFont()
             } else {
                 currentFont = UIFont.systemFont(ofSize: fontSize)
             }
+            #elseif os(macOS)
+            let currentFont: NSFont
+            currentFont = NSFont.systemFont(ofSize: fontSize)
+            #endif
 
             switch style {
             case .bullet:
                 let level = indentLevel + 1
+                #if os(iOS)
                 if level == 1 {
-              
                     let img = createMarkerImage(size: 10, isHollow: false)
                     markerAttrStr.append(getAttributedString(forImage: img, font: currentFont))
                 } else if level == 2 {
-             
                     let img = createMarkerImage(size: 8, isHollow: true)
                     markerAttrStr.append(getAttributedString(forImage: img, font: currentFont))
                 } else {
-          
                     let img = createMarkerImage(size: 7, isHollow: false, isSquare: true)
                     markerAttrStr.append(getAttributedString(forImage: img, font: currentFont))
                 }
+                #else
+                let bullet: String
+                if level == 1 { bullet = "•" }
+                else if level == 2 { bullet = "◦" }
+                else { bullet = "▪" }
+                markerAttrStr.append(NSAttributedString(string: bullet, attributes: getMarkerAttributes(size: fontSize, offset: 0)))
+                #endif
 
             case .number(let start):
            
@@ -370,20 +407,37 @@ struct MultiBlockView: View {
             // But user complained "did not achieve effect".
             // Let's use the listItemAttributes for marker too.
             if let color = combinedItemAttributes.foregroundColor {
+                #if os(iOS)
+                let platformColor = UIColor(color)
+                #elseif os(macOS)
+                let platformColor = NSColor(color)
+                #else
+                let platformColor = Color.primary
+                #endif
+
                 markerAttrStr.addAttribute(
                     NSAttributedString.Key.foregroundColor,
-                    value: UIColor(color),
+                    value: platformColor,
                     range: NSRange(location: 0, length: markerAttrStr.length)
                 )
             } else {
+                #if os(iOS)
+                let platformColor = UIColor.label
+                #elseif os(macOS)
+                let platformColor = NSColor.labelColor
+                #else
+                let platformColor = Color.primary
+                #endif
+
                 markerAttrStr.addAttribute(
                     NSAttributedString.Key.foregroundColor,
-                    value: UIColor.label,
+                    value: platformColor,
                     range: NSRange(location: 0, length: markerAttrStr.length)
                 )
             }
 
             // Apply font
+            #if os(iOS)
             if let fontProp = contentFontProperties {
                 let uiFont = fontProp.resolveUIFont()
                 markerAttrStr.addAttribute(
@@ -392,6 +446,7 @@ struct MultiBlockView: View {
                     range: NSRange(location: 0, length: markerAttrStr.length)
                 )
             }
+            #endif
 
             result.append(markerAttrStr)
 
@@ -499,7 +554,11 @@ struct MultiBlockView: View {
             colorScheme: colorScheme
         )
 
+        #if os(iOS)
         let nsAttrStr = NSMutableAttributedString(attributedString: attrStr.resolvingUIFonts())
+        #else
+        let nsAttrStr = NSMutableAttributedString(attributedString: NSAttributedString(attrStr))
+        #endif
 
         let fullRange = NSRange(location: 0, length: nsAttrStr.length)
 
@@ -551,4 +610,5 @@ struct MultiBlockView: View {
 
         result.append(nsAttrStr)
     }
+
 }
