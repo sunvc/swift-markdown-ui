@@ -87,6 +87,7 @@ public class CustomTapTextView: UITextView, UIGestureRecognizerDelegate {
 struct CustomTapTextViewRepresentable: UIViewRepresentable {
     let attributedString: NSAttributedString
     var customTapAction: (() -> Void)?
+    var lineLimit: Int?
 
     func makeUIView(context: Context) -> CustomTapTextView {
         let textView = CustomTapTextView()
@@ -99,6 +100,15 @@ struct CustomTapTextViewRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: CustomTapTextView, context: Context) {
         uiView.attributedText = attributedString
         uiView.customTapAction = customTapAction
+        
+        // 应用行数限制
+        if let lineLimit = lineLimit {
+            uiView.textContainer.maximumNumberOfLines = lineLimit
+            uiView.textContainer.lineBreakMode = .byTruncatingTail
+        } else {
+            uiView.textContainer.maximumNumberOfLines = 0
+            uiView.textContainer.lineBreakMode = .byWordWrapping
+        }
     }
 
     @available(iOS 16.0, *)

@@ -6,6 +6,7 @@ public struct SelectableMarkdown: View {
     @Environment(\.theme) private var theme
     @Environment(\.baseURL) private var baseURL
     @Environment(\.softBreakMode) private var softBreakMode
+    @Environment(\.lineLimit) private var lineLimit
     
     private let content: MarkdownContent
     private let highlightText: String?
@@ -32,7 +33,8 @@ public struct SelectableMarkdown: View {
                 softBreakMode: softBreakMode,
                 baseAttributes: attributes,
                 highlightText: highlightText,
-                highlightColor: highlightColor
+                highlightColor: highlightColor,
+                lineLimit: lineLimit
             )
         }
         .textStyle(theme.text)
@@ -47,6 +49,7 @@ private struct SelectableMarkdownBody: View {
     let baseAttributes: AttributeContainer
     let highlightText: String?
     let highlightColor: Color?
+    let lineLimit: Int?
     
     @ScaledMetric private var size: CGFloat
     
@@ -57,7 +60,8 @@ private struct SelectableMarkdownBody: View {
         softBreakMode: SoftBreak.Mode,
         baseAttributes: AttributeContainer,
         highlightText: String? = nil,
-        highlightColor: Color? = nil
+        highlightColor: Color? = nil,
+        lineLimit: Int? = nil
     ) {
         self.blocks = blocks
         self.theme = theme
@@ -66,6 +70,7 @@ private struct SelectableMarkdownBody: View {
         self.baseAttributes = baseAttributes
         self.highlightText = highlightText
         self.highlightColor = highlightColor
+        self.lineLimit = lineLimit
         self._size = ScaledMetric(
             wrappedValue: baseAttributes.fontProperties?.size ?? FontProperties.defaultSize,
             relativeTo: .body
@@ -94,7 +99,8 @@ private struct SelectableMarkdownBody: View {
         )
         
         return CustomTapTextViewRepresentable(
-            attributedString: finalAttributedString
+            attributedString: finalAttributedString,
+            lineLimit: lineLimit
         )
         .fixedSize(horizontal: false, vertical: true)
     }
